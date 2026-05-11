@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>産業医 Morning Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@300;400&family=Shippori+Mincho:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #3d3d5c;
+    --paper: #f5f0e8;
+    --accent: #c0392b;
+    --accent-soft: #e8d5d3;
+    --gold: #b8860b;
+    --gold-light: #f5e9c0;
+    --line: rgba(26,26,46,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.2rem 1rem;
+  }
+
+  /* ── ヘッダー ── */
+  .masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+  .masthead-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.3em;
+    color: var(--ink-soft);
+  }
+  .masthead-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-soft);
+  }
+
+  .headline-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin: 0.3rem 0 0.2rem;
+  }
+  .big-date {
+    font-family: 'Shippori Mincho', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .day-info { display: flex; flex-direction: column; gap: 0.1rem; }
+  .day-name {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    color: var(--ink-soft);
+  }
+  .time-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── 今日は何の日バー ── */
+  .trivia-bar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.4rem 1rem;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0.6rem 0 1rem;
+  }
+  .trivia-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    color: var(--gold-light);
+    white-space: nowrap;
+  }
+  .trivia-text { opacity: 0.9; line-height: 1.5; }
+
+  /* ── グリッド ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid var(--line);
+    padding: 0.9rem 1rem;
+  }
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.22em;
+    color: var(--ink-soft);
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ── 天気 ── */
+  .weather-main { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
+  .weather-icon { font-size: 2rem; line-height: 1; }
+  .weather-temp {
+    font-family: 'DM Mono', monospace;
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1;
+  }
+  .weather-temp span { font-size: 0.85rem; color: var(--ink-soft); }
+  .weather-desc { font-size: 0.75rem; color: var(--ink-soft); margin-bottom: 0.4rem; }
+  .weather-detail {
+    display: flex;
+    gap: 0.8rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-soft);
+  }
+  .weather-alert {
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: var(--gold-light);
+    border-left: 2px solid var(--gold);
+    font-size: 0.68rem;
+  }
+
+  /* ── スケジュール ── */
+  .schedule-item {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    align-items: flex-start;
+  }
+  .schedule-item:last-child { border-bottom: none; }
+  .schedule-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    white-space: nowrap;
+    min-width: 3rem;
+    padding-top: 0.1rem;
+  }
+  .schedule-title { font-size: 0.75rem; line-height: 1.4; }
+  .schedule-company {
+    font-size: 0.62rem;
+    color: var(--ink-soft);
+    font-family: 'DM Mono', monospace;
+  }
+  .no-events { font-size: 0.75rem; color: var(--ink-soft); font-style: italic; }
+
+  /* ── 面談（ダーク） ── */
+  .interview-card {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    grid-row: 1 / 3;
+  }
+  .interview-card .card-label { color: var(--gold-light); }
+  .interview-card .card-label::after { background: rgba(255,255,255,0.12); }
+
+  .interview-item {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .interview-item:last-child { border-bottom: none; }
+  .interview-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--gold-light);
+    margin-bottom: 0.15rem;
+  }
+  .interview-name { font-size: 0.82rem; font-weight: 500; margin-bottom: 0.1rem; }
+  .interview-company { font-size: 0.62rem; opacity: 0.55; font-family: 'DM Mono', monospace; }
+  .interview-type {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.58rem;
+    font-family: 'DM Mono', monospace;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.65);
+    letter-spacing: 0.08em;
+  }
+  .interview-empty { font-size: 0.75rem; opacity: 0.45; font-style: italic; }
+
+  /* ── ニュース ── */
+  .news-card { grid-column: 1 / 3; }
+  .news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.2rem; }
+  .news-item { padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+  .news-source {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.15rem;
+  }
+  .news-headline { font-size: 0.74rem; line-height: 1.5; }
+  .news-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--ink-soft);
+    margin-top: 0.1rem;
+  }
+
+  /* ── ボタン ── */
+  .action-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn-primary:hover { background: #a93226; border-color: #a93226; }
+
+  /* ── モーダル ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,26,46,0.75);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    padding: 1.6rem;
+    width: min(460px, 94vw);
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .form-group { margin-bottom: 0.8rem; }
+  .form-label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+  }
+  .form-input {
+    width: 100%;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--line);
+    background: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.74rem;
+    color: var(--ink);
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--ink); }
+  .form-note { font-size: 0.65rem; color: var(--ink-soft); margin-top: 0.25rem; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 0.5rem; margin-top: 1.2rem; justify-content: flex-end; }
+
+  /* ── URLコピーボックス ── */
+  .url-box {
+    background: #1a1a2e;
+    color: #a8d8a8;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    padding: 0.6rem 0.8rem;
+    word-break: break-all;
+    line-height: 1.6;
+    margin-top: 0.6rem;
+    border-radius: 2px;
+  }
+
+  /* ローディング */
+  .loading {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-soft);
+    opacity: 0.6;
+  }
+  .loading::after {
+    content: '';
+    animation: dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0%,20%{content:''}40%{content:'.'}60%{content:'..'}80%,100%{content:'...'}
+  }
+
+  .status-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--ink-soft);
+    margin-left: auto;
+  }
+
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+    .interview-card { grid-row: auto; }
+    .news-card { grid-column: 1; }
+    .news-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ヘッダー -->
+  <div class="masthead">
+    <div class="masthead-title">産業医 Morning Dashboard</div>
+    <div class="masthead-date" id="headerDate"></div>
+  </div>
+
+  <div class="headline-row">
+    <div class="big-date" id="bigDate">—</div>
+    <div class="day-info">
+      <div class="day-name" id="dayName">—</div>
+      <div class="time-display" id="clockDisplay">—</div>
+    </div>
+  </div>
+
+  <div class="trivia-bar">
+    <span class="trivia-label">今日は何の日</span>
+    <span class="trivia-text" id="triviaText"><span class="loading">読み込み中</span></span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">天気予報 — 横浜</div>
+      <div id="weatherContent"><div class="loading">取得中</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">今日の予定</div>
+      <div id="scheduleContent"><div class="loading">取得中</div></div>
+    </div>
+
+    <div class="card interview-card">
+      <div class="card-label">面談予定</div>
+      <div id="interviewContent"><div class="interview-empty">取得中...</div></div>
+    </div>
+
+    <div class="card news-card">
+      <div class="card-label">産業保健ニュース</div>
+      <div id="newsContent"><div class="loading">AI検索中</div></div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="refreshAll()">🔄 更新</button>
+    <button class="btn" onclick="openSettings()">⚙ 設定 / URL生成</button>
+    <button class="btn" onclick="window.open('https://calendar.google.com','_blank')">📅 Gカレンダー</button>
+    <span class="status-note" id="lastUpdated"></span>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>⚙ 設定 — Notion埋め込み用URL生成</h2>
+
+    <div class="form-group">
+      <label class="form-label">Google Calendar API Key</label>
+      <input class="form-input" id="gcalApiKey" type="password" placeholder="AIza...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Calendar ID（GmailアドレスでOK）</label>
+      <input class="form-input" id="gcalId" placeholder="xxx@gmail.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">OpenWeatherMap API Key</label>
+      <input class="form-input" id="weatherApiKey" type="password" placeholder="天気取得用">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Anthropic API Key（ニュース・雑学）</label>
+      <input class="form-input" id="anthropicApiKey" type="password" placeholder="sk-ant-...">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">▼ Notion埋め込み用URL（生成後コピー）</label>
+      <div class="form-note">APIキーをURLに埋め込む形式です。このURLをNotionの「埋め込み」ブロックに貼り付けてください。</div>
+      <div class="url-box" id="generatedUrl">← 下のボタンを押すとURLが生成されます</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSettings()">閉じる</button>
+      <button class="btn" onclick="generateUrl()">🔗 URL生成</button>
+      <button class="btn btn-primary" onclick="applyAndClose()">適用</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── URLパラメータからAPIキーを取得 ──
+function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    gcalApiKey:     p.get('gk') || '',
+    gcalId:         p.get('gi') || '',
+    weatherApiKey:  p.get('wk') || '',
+    anthropicApiKey:p.get('ak') || '',
+  };
+}
+
+// メモリ内設定（URLパラメータ優先、なければ入力値）
+let cfg = getParams();
+
+// ── 時刻 ──
+const DAYS = ['日','月','火','水','木','金','土'];
+const DAYS_FULL = ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
+
+function updateClock() {
+  const now = new Date();
+  const M = String(now.getMonth()+1).padStart(2,'0');
+  const D = String(now.getDate()).padStart(2,'0');
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const wd = now.getDay();
+  document.getElementById('bigDate').textContent = `${M}.${D}`;
+  document.getElementById('dayName').textContent = DAYS_FULL[wd];
+  document.getElementById('clockDisplay').textContent = `${h}:${m}:${s}`;
+  document.getElementById('headerDate').textContent =
+    `${now.getFullYear()}年${M}月${D}日（${DAYS[wd]}）`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── 天気 ──
+const WEATHER_ICONS = {
+  '01':'☀️','02':'⛅','03':'☁️','04':'☁️',
+  '09':'🌧️','10':'🌦️','11':'⛈️','13':'❄️','50':'🌫️'
+};
+
+async function fetchWeather() {
+  const el = document.getElementById('weatherContent');
+  if (!cfg.weatherApiKey) {
+    el.innerHTML = `<div class="weather-desc" style="color:var(--ink-soft)">⚙ 設定からAPIキーを入力してください</div>`;
+    return;
+  }
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=Yokohama,JP&appid=${cfg.weatherApiKey}&units=metric&lang=ja`
+    );
+    if (!res.ok) throw new Error(`${res.status}`);
+    const d = await res.json();
+    const icon = WEATHER_ICONS[d.weather[0].icon.slice(0,2)] || '🌡️';
+    const temp = Math.round(d.main.temp);
+    const feels = Math.round(d.main.feels_like);
+    const month = new Date().getMonth()+1;
+    const alert = temp >= 28 && month >= 5 && month <= 9;
+    el.innerHTML = `
+      <div class="weather-main">
+        <div class="weather-icon">${icon}</div>
+        <div class="weather-temp">${temp}<span>°C</span></div>
+      </div>
+      <div class="weather-desc">${d.weather[0].description}　体感${feels}°C</div>
+      <div class="weather-detail"><span>💧${d.main.humidity}%</span><span>💨${Math.round(d.wind.speed*3.6)}km/h</span></div>
+      ${alert ? '<div class="weather-alert">⚠️ 熱中症注意：従業員への声かけを</div>' : ''}
+    `;
+  } catch(e) {
+    el.innerHTML = `<div class="weather-desc" style="color:var(--accent)">取得失敗 (${e.message})</div>`;
+  }
+}
+
+// ── カレンダー ──
+const INTERVIEW_KW = ['面談','面接','面接指導','復職','産業医','過重労働','メンタル','ストレスチェック'];
+
+async function fetchCalendar() {
+  if (!cfg.gcalApiKey || !cfg.gcalId) {
+    renderSchedule([{time:'09:00',title:'衛生委員会',company:'A社'},{time:'14:00',title:'定期巡視',company:'B社'}]);
+    renderInterviews([{time:'11:00',name:'山田 太郎',company:'C社',type:'過重労働'}]);
+    return;
+  }
+  try {
+    const now = new Date();
+    const start = new Date(now.getFullYear(),now.getMonth(),now.getDate()).toISOString();
+    const end   = new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59).toISOString();
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cfg.gcalId)}/events?key=${cfg.gcalApiKey}&timeMin=${start}&timeMax=${end}&singleEvents=true&orderBy=startTime`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    const events = (data.items||[]).map(ev => {
+      let timeStr = ev.start?.dateTime
+        ? (() => { const d=new Date(ev.start.dateTime); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()
+        : '終日';
+      return { time:timeStr, title:ev.summary||'（無題）', company:ev.location||'' };
+    });
+    renderSchedule(events.filter(e => !INTERVIEW_KW.some(k=>e.title.includes(k))));
+    renderInterviews(events
+      .filter(e => INTERVIEW_KW.some(k=>e.title.includes(k)))
+      .map(e => ({ time:e.time, name:e.title, company:e.company, type:INTERVIEW_KW.find(k=>e.title.includes(k))||'面談' }))
+    );
+  } catch(err) {
+    document.getElementById('scheduleContent').innerHTML =
+      `<div class="no-events" style="color:var(--accent)">取得失敗 (${err.message})<br><small>カレンダーの公開設定を確認してください</small></div>`;
+    renderInterviews([]);
+  }
+}
+
+function renderSchedule(evs) {
+  const el = document.getElementById('scheduleContent');
+  if (!evs.length) { el.innerHTML = '<div class="no-events">本日の予定はありません</div>'; return; }
+  el.innerHTML = evs.map(e=>`
+    <div class="schedule-item">
+      <div class="schedule-time">${e.time}</div>
+      <div>
+        <div class="schedule-title">${e.title}</div>
+        ${e.company?`<div class="schedule-company">${e.company}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderInterviews(ivs) {
+  const el = document.getElementById('interviewContent');
+  if (!ivs.length) { el.innerHTML = '<div class="interview-empty">本日の面談予定なし</div>'; return; }
+  el.innerHTML = ivs.map(iv=>`
+    <div class="interview-item">
+      <div class="interview-time">${iv.time}</div>
+      <div class="interview-name">${iv.name}</div>
+      <div class="interview-company">${iv.company}</div>
+      <span class="interview-type">${iv.type}</span>
+    </div>`).join('');
+}
+
+// ── AI：雑学＆ニュース ──
+async function fetchTrivia() {
+  const el = document.getElementById('triviaText');
+  if (!cfg.anthropicApiKey) {
+    const now = new Date();
+    el.textContent = `${now.getMonth()+1}月${now.getDate()}日 — APIキーを設定するとAI生成されます`;
+    return;
+  }
+  el.innerHTML = '<span class="loading">AI生成中</span>';
+  try {
+    const now = new Date();
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':cfg.anthropicApiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:120,
+        messages:[{role:'user',content:`${now.getMonth()+1}月${now.getDate()}日の「今日は何の日」を産業保健・労働安全衛生に関連した内容で1〜2文、日本語で。`}]
+      })
+    });
+    const d = await res.json();
+    el.textContent = d.content?.[0]?.text || '取得できませんでした';
+  } catch { el.textContent = '取得に失敗しました'; }
+}
+
+async function fetchNews() {
+  const el = document.getElementById('newsContent');
+  if (!cfg.anthropicApiKey) {
+    el.innerHTML = `<div class="news-grid">${demoNews().map(newsHTML).join('')}</div>`;
+    return;
+  }
+  el.innerHTML = '<div class="loading">産業保健ニュース検索中</div>';
+  try {
+    const today = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':cfg.anthropicApiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:700,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:`今日(${today})の産業保健・労働安全衛生・職場メンタルヘルス・厚生労働省の最新情報を4件。JSONのみ返す: {"items":[{"source":"出典","headline":"見出し30文字以内","date":"日付"}]}`}]
+      })
+    });
+    const data = await res.json();
+    const txt = data.content?.find(b=>b.type==='text')?.text || '';
+    let items = [];
+    try { items = JSON.parse(txt.replace(/```json|```/g,'').trim()).items || []; }
+    catch { items = demoNews(); }
+    el.innerHTML = `<div class="news-grid">${items.map(newsHTML).join('')}</div>`;
+  } catch {
+    el.innerHTML = `<div class="news-grid">${demoNews().map(newsHTML).join('')}</div>`;
+  }
+}
+
+function newsHTML(n) {
+  return `<div class="news-item">
+    <div class="news-source">${n.source||'—'}</div>
+    <div class="news-headline">${n.headline}</div>
+    <div class="news-date">${n.date||''}</div>
+  </div>`;
+}
+
+function demoNews() {
+  return [
+    {source:'厚生労働省',headline:'ストレスチェック制度の見直し検討',date:'Anthropic APIキーを設定すると最新情報を取得'},
+    {source:'産業医科大学',headline:'職域の睡眠障害対策 新ガイドライン',date:''},
+    {source:'安全衛生情報センター',headline:'化学物質自律管理 新通達発出',date:''},
+    {source:'日本医師会',headline:'産業医研修 新カリキュラム案公表',date:''},
+  ];
+}
+
+// ── 全体更新 ──
+function refreshAll() {
+  fetchWeather();
+  fetchCalendar();
+  fetchTrivia();
+  fetchNews();
+  const now = new Date();
+  document.getElementById('lastUpdated').textContent =
+    `更新: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+// ── 設定モーダル ──
+function openSettings() {
+  document.getElementById('gcalApiKey').value   = cfg.gcalApiKey;
+  document.getElementById('gcalId').value        = cfg.gcalId;
+  document.getElementById('weatherApiKey').value = cfg.weatherApiKey;
+  document.getElementById('anthropicApiKey').value = cfg.anthropicApiKey;
+  document.getElementById('generatedUrl').textContent = '← URL生成ボタンを押してください';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function generateUrl() {
+  const gk = document.getElementById('gcalApiKey').value.trim();
+  const gi = document.getElementById('gcalId').value.trim();
+  const wk = document.getElementById('weatherApiKey').value.trim();
+  const ak = document.getElementById('anthropicApiKey').value.trim();
+
+  const base = window.location.href.split('?')[0];
+  const params = new URLSearchParams();
+  if (gk) params.set('gk', gk);
+  if (gi) params.set('gi', gi);
+  if (wk) params.set('wk', wk);
+  if (ak) params.set('ak', ak);
+
+  const url = `${base}?${params.toString()}`;
+  document.getElementById('generatedUrl').textContent = url;
+
+  // クリップボードにコピー
+  navigator.clipboard?.writeText(url).then(() => {
+    document.getElementById('generatedUrl').textContent = url + '\n\n✅ コピーしました！';
+  });
+}
+
+function applyAndClose() {
+  cfg.gcalApiKey      = document.getElementById('gcalApiKey').value.trim();
+  cfg.gcalId          = document.getElementById('gcalId').value.trim();
+  cfg.weatherApiKey   = document.getElementById('weatherApiKey').value.trim();
+  cfg.anthropicApiKey = document.getElementById('anthropicApiKey').value.trim();
+  closeSettings();
+  refreshAll();
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeSettings(); });
+
+// ── 初期化 ──
+window.addEventListener('load', refreshAll);
+</script>
+</body>
+</html>
